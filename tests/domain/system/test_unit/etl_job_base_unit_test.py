@@ -7,32 +7,33 @@ job defined in etl_job.py. It makes use of a local version of PySpark
 that is bundled with the PySpark package.
 """
 import unittest
-import shutil
 import json
-
 from pyspark.sql.functions import mean
 
 from dependencies.spark import start_spark
-from jobs.etl_job import transform_data
+from jobs.domain.system.etl_job_base import transform_data
 
 
-class SparkETLTests(unittest.TestCase):
+class SparkETLTestsSetUp(unittest.TestCase):
     """Test suite for transformation in etl_job.py
     """
-
+    @classmethod
     def setUp(self):
         """Start Spark, define config and path to test data
         """
         self.config = json.loads("""{"steps_per_floor": 21}""")
         self.spark, *_ = start_spark()
-        self.test_data_path = 'tests/test_data/'
+        self.test_data_path = 'file:///code/tests/domain/system/test_unit/test_data/'
 
+    @classmethod
     def tearDown(self):
         """Stop Spark
         """
         #shutil.rmtree(self.test_data_path)
         self.spark.stop()
 
+
+class BaseJobETL(SparkETLTestsSetUp):
     def test_transform_data(self):
         """Test data transformer.
 
@@ -51,6 +52,8 @@ class SparkETLTests(unittest.TestCase):
             .read
             .parquet(self.test_data_path + 'employees_report'))
 
+        expected_data.show()
+        input_data.show()
         expected_cols = len(expected_data.columns)
         expected_rows = expected_data.count()
         expected_avg_steps = (
